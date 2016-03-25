@@ -3,8 +3,25 @@
 
 ## API:
 
+### `orchestrator.schedule`
+Arguments:
+- httpAddress: the http address of the task. `orchestrator` will make a request to this address, and save the results.
+- timeDelayInSeconds: the time delay before this task is run, given in seconds from right now.
 
-### Example Usage:
+Returns: 
+taskID. This is a numeric ID for the task that was just scheduled. This ID can be used to retrieve the status/results of the task.
+
+### `orchestrator.getResults`
+Arguments:
+- taskID: the ID of a task that was previously scheduled.
+
+Returns:
+If the task has been run successfully: results that were retrieved for that task.
+If the task has encountered an error 4 times, and thus, has failed: the error message.
+If the task has not run yet: a message stating that this task has not run yet. 
+
+
+## Example Usage:
 1. Save `orchestrator.py` into the desired directory.
 2. Inside your python code, `import orchestrator`
 3. `taskID1 = orchestrator.schedule(httpAddress, timeDelayInSeconds)`
