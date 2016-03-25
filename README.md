@@ -1,0 +1,29 @@
+# orchestrator
+> Schedule a series of API calls
+
+## API:
+
+
+### Example Usage:
+1. Save `orchestrator.py` into the desired directory.
+2. Inside your python code, `import orchestrator`
+3. `taskID1 = orchestrator.schedule(httpAddress, timeDelayInSeconds)`
+4. `orchestrator.getResults(taskID1)` If the task has run and gotten results properly, this will return those results. If the scheduler has not run yet, or has repeatedly failed to get results, you will get an error message.
+
+
+#### Assumptions
+
+If we were in-person and could go back and forth on this rapidly, I would phrase these as questions and test how well we can collaborate. Given the time uncertainty with email communication, I'm instead going to phrase them as assumptions and ask if any of these assumptions are invalid. 
+
+  1. The user will give us a time (in seconds), representing how far in the future they would like the given task to be run. 
+  2. The user will give us the http address of the API endpoint as one of the inputs to the orchestrator.
+  3. Each API request should be a GET request.
+  4. Recurring requests will take in a time (in seconds) between executions of the given task (even though a cron job is mostly likely better suited for this). 
+  5. Recurring tasks will recur forever on that same fixed interval.
+  6. A task cannot be canceled once scheduled. 
+  7. There is no way to access all tasks at once.
+  8. The user can come back to ask orchestrator for the results of a task. In this way, we avoid introducing asynchronicity to the Python codebase, which likely doesn't have much asynch code yet. If this were in JS, we'd definitely be going asynch and returning promises! 
+  9. The http address given by the user will represent the full URL, without needing to add in query parameters or anything else.
+  10. A task that fails will retry 3 times before admitting total defeat. We will save an error message as the "result" for this task.
+  11. We are going to assume the user is smart enough to use this in a thread they are not running anything else in, as orchestrator will be blocking in that thread. We could redesign it to be non-blocking, but for now we are deciding that is not in the MVP scope. 
+ 
