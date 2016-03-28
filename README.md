@@ -24,13 +24,14 @@ If the task has not run yet: a message stating that this task has not run yet.
 ## Example Usage:
 1. Save `orchestrator.py` into the desired directory.
 2. Inside your python code, `import orchestrator`
-3. `taskID1 = orchestrator.schedule(httpAddress, timeDelayInSeconds)`
-4. `orchestrator.getResults(taskID1)` If the task has run and gotten results properly, this will return those results. If the scheduler has not run yet, or has repeatedly failed to get results, you will get an error message.
+3. `or = orchestrator['start']()`
+3. `taskID1 = or.schedule(httpAddress, timeDelayInSeconds)`
+4. `or.getResults(taskID1)` If the task has run and gotten results properly, this will return those results. If the scheduler has not run yet, or has repeatedly failed to get results, you will get an error message.
 
 
 #### Assumptions
 
-If we were in-person and could go back and forth on this rapidly, I would phrase these as questions and test how well we can collaborate. Given the time uncertainty with email communication, I'm instead going to phrase them as assumptions and ask if any of these assumptions are invalid. 
+If we were in-person and could go back and forth on this rapidly, I would phrase these as questions and test how well we can collaborate. Instead, they will simply be design decisions that could be relatively easily modified if design requirements change. 
 
   1. The user will give us a time (in seconds), representing how far in the future they would like the given task to be run. 
   2. The user will give us the http address of the API endpoint as one of the inputs to the orchestrator.
@@ -43,4 +44,5 @@ If we were in-person and could go back and forth on this rapidly, I would phrase
   9. The http address given by the user will represent the full URL, without needing to add in query parameters or anything else.
   10. A task that fails will retry 3 times before admitting total defeat. We will save an error message as the "result" for this task.
   11. We are going to assume the user is smart enough to use this in a thread they are not running anything else in, as orchestrator will be blocking in that thread. We could redesign it to be non-blocking, but for now we are deciding that is not in the MVP scope. 
+  12. The user will schedule all of their tasks at once
  
