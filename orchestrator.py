@@ -13,37 +13,39 @@ class Orchestrator:
 
     def make_api_call(self, http_address, failed_attempts, taskID, recurring=False, recurring_time=1000):
 
+        # reschedule the recurring task
+        if recurring:
+            self.scheduler.enter(recurring_time, 1, self.make_api_call, (http_address, 0, taskID, recurring, recurring_time))
+
+
         # make an api call
         try:
             r = requests.get(http_address)
 
             if r.status_code == requests.codes.ok:
                 # save what we get back from the API call to results
-                self.results[taskID] = r.text
+                self.results[taskID].append( r.text )
             else:
                 handle_http_failure(http_address, failed_attempts + 1, taskID, r.status_code)
 
         except Exception as e:
             self.handle_http_failure(http_address, failed_attempts + 1, taskID, e)
 
-        # TODO: 
-            # reschedule the recurring task
 
 
-    # handle failure 
-        # if it fails, run make_api_call, increasing failed_attempts
-            # assuming that failed_attempts <=3
-        # if it fails 4 times, save the error message into results
     def handle_http_failure(self, http_address, failed_attempts, taskID, status_code):
-        if failed_attempts == 3:
-            self.results[taskID] = status_code
-        else:
+
+        # save the error message no matter what, so the user can see an accurate log of what transpired
+        self.results[taskID].append( status_code )
+
+        if failed_attempts < 4:
             # we do not want to reschedule the tasks again
             self.make_api_call( http_address, failed_attempts, taskID)
 
 
     def schedule(self, http_address, time_delay, does_repeat=False, priority=1):
-        self.results[self.next_task_num] = 'We have not run this task yet'
+        # for each task, we will have a list of all the responses associated with that task (the initial scheduling message, any errors collected, and for any recurring tasks, the full text response for each time that task is run)
+        self.results[self.next_task_num] = ['This task has been scheduled']
 
         self.scheduler.enter(time_delay, priority, self.make_api_call, (http_address, 0, self.next_task_num, does_repeat, time_delay))
 
