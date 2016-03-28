@@ -8,31 +8,44 @@ class Orchestrator:
     def __init__(self):
         self.scheduler = sched.scheduler(time.time, time.sleep)
         self.results = {}
-        self.nextTaskNum = 0
+        self.next_task_num = 0
         
 
-    def makeAPICall(self, httpAddress, failedAttempts, taskID, recurring=False, recurringTime=1000):
-        print 'inside makeAPICall'
-        print 'taskID'
-        print taskID
-        print 'httpAddress'
-        print httpAddress
-        r = requests.get(httpAddress)
-        self.results[taskID] = r.text
+    def make_api_call(self, http_address, failed_attempts, taskID, recurring=False, recurring_time=1000):
+
+        # make an api call
+        try:
+            r = requests.get(http_address)
+
+            if r.status_code == requests.codes.ok:
+                # save what we get back from the API call to results
+                self.results[taskID] = r.text
+            else:
+                handle_http_failure(http_address, failed_attempts + 1, taskID, r.status_code)
+
+        except Exception as e:
+            self.handle_http_failure(http_address, failed_attempts + 1, taskID, e)
+
         # TODO: 
             # reschedule the recurring task
-            # make an api call
-            # handle failure 
-                # if it fails, run this function recursively, increasing failedAttempts
-                    # assuming that failedAttempts <=3
-                # if it fails 4 times, save the error message into results
-            # save what we get back from the API call to results
 
 
-    def schedule(self, httpAddress, timeDelay, doesRepeat=False, priority=1):
-        self.results[self.nextTaskNum] = 'We have not run this task yet'
+    # handle failure 
+        # if it fails, run make_api_call, increasing failed_attempts
+            # assuming that failed_attempts <=3
+        # if it fails 4 times, save the error message into results
+    def handle_http_failure(self, http_address, failed_attempts, taskID, status_code):
+        if failed_attempts == 3:
+            self.results[taskID] = status_code
+        else:
+            # we do not want to reschedule the tasks again
+            self.make_api_call( http_address, failed_attempts, taskID)
 
-        self.scheduler.enter(timeDelay, priority, self.makeAPICall, (httpAddress, 0, self.nextTaskNum, doesRepeat, timeDelay))
+
+    def schedule(self, http_address, time_delay, does_repeat=False, priority=1):
+        self.results[self.next_task_num] = 'We have not run this task yet'
+
+        self.scheduler.enter(time_delay, priority, self.make_api_call, (http_address, 0, self.next_task_num, does_repeat, time_delay))
 
         # TODO: 
             # take in the required arguments
@@ -44,10 +57,10 @@ class Orchestrator:
             # build out functionality to try again if an API call fails
             # update README with final API
 
-        self.nextTaskNum += 1
-        return self.nextTaskNum - 1
+        self.next_task_num += 1
+        return self.next_task_num - 1
 
-    def getResults(self, taskID):
+    def get_results(self, taskID):
         return self.results[taskID]
 
     def start(self):
@@ -59,10 +72,10 @@ class Orchestrator:
 or1 = Orchestrator()
 
 
-taskID1 = or1.schedule('http://prestonparry.com',2)
-taskID2 = or1.schedule('http://github.com/climbsrocks',1)
+taskID1 = or1.schedule('http://presotnparry.com',1)
+taskID2 = or1.schedule('http://github.com/climbsrocks',2)
 or1.start()
 print taskID1
 
-task1Results = or1.getResults(taskID1)
+task1Results = or1.get_results(taskID1)
 print task1Results
