@@ -11,11 +11,11 @@ class Orchestrator:
         self.next_task_num = 0
         
 
-    def make_api_call(self, http_address, failed_attempts, taskID, recurring=False, recurring_time=1000):
+    def __make_api_call(self, http_address, failed_attempts, taskID, recurring=False, recurring_time=1000):
 
         # reschedule the recurring task
         if recurring:
-            self.scheduler.enter(recurring_time, 1, self.make_api_call, (http_address, 0, taskID, recurring, recurring_time))
+            self.scheduler.enter(recurring_time, 1, self.__make_api_call, (http_address, 0, taskID, recurring, recurring_time))
 
 
         # make an api call
@@ -26,58 +26,35 @@ class Orchestrator:
                 # save what we get back from the API call to results
                 self.results[taskID].append( r.text )
             else:
-                handle_http_failure(http_address, failed_attempts + 1, taskID, r.status_code)
+                __handle_request_failure(http_address, failed_attempts + 1, taskID, r.status_code)
 
         except Exception as e:
-            self.handle_http_failure(http_address, failed_attempts + 1, taskID, e)
+            self.__handle_request_failure(http_address, failed_attempts + 1, taskID, e)
 
 
-
-    def handle_http_failure(self, http_address, failed_attempts, taskID, status_code):
+    def __handle_request_failure(self, http_address, failed_attempts, taskID, status_code):
 
         # save the error message no matter what, so the user can see an accurate log of what transpired
         self.results[taskID].append( status_code )
 
         if failed_attempts < 4:
             # we do not want to reschedule the tasks again
-            self.make_api_call( http_address, failed_attempts, taskID)
+            self.__make_api_call( http_address, failed_attempts, taskID)
 
 
     def schedule(self, http_address, time_delay, does_repeat=False, priority=1):
         # for each task, we will have a list of all the responses associated with that task (the initial scheduling message, any errors collected, and for any recurring tasks, the full text response for each time that task is run)
         self.results[self.next_task_num] = ['This task has been scheduled']
 
-        self.scheduler.enter(time_delay, priority, self.make_api_call, (http_address, 0, self.next_task_num, does_repeat, time_delay))
-
-        # TODO: 
-            # take in the required arguments
-            # schedule the task
-            # make sure to handle recurring tasks
-                # probably just schedule it again when we run it
-            # build out functionality to make API calls
-            # save results from API call into results dict
-            # build out functionality to try again if an API call fails
-            # update README with final API
+        self.scheduler.enter(time_delay, priority, self.__make_api_call, (http_address, 0, self.next_task_num, does_repeat, time_delay))
 
         self.next_task_num += 1
         return self.next_task_num - 1
 
+
     def get_results(self, taskID):
         return self.results[taskID]
 
+
     def start(self):
         self.scheduler.run()
-
-
-
-# To rapidly test this out:
-or1 = Orchestrator()
-
-
-taskID1 = or1.schedule('http://presotnparry.com',1)
-taskID2 = or1.schedule('http://github.com/climbsrocks',2)
-or1.start()
-print taskID1
-
-task1Results = or1.get_results(taskID1)
-print task1Results
