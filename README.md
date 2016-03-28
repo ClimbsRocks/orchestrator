@@ -28,6 +28,9 @@ If the task has not run yet: a message stating that this task has not run yet.
 3. `taskID1 = or.schedule(httpAddress, timeDelayInSeconds)`
 4. `or.getResults(taskID1)` If the task has run and gotten results properly, this will return those results. If the scheduler has not run yet, or has repeatedly failed to get results, you will get an error message.
 
+### Error Handling
+Orchestrator will continue to run, even if one of the tasks errors out for any reason. The task will be retried 3 times. If there's an error at the end of 4 unsuccessful attempts, that error message or status code will be saved into the results for that taskID. Orchestrator will continue to run all other scheduled tasks as normal. 
+
 
 #### Assumptions
 
@@ -44,5 +47,7 @@ If we were in-person and could go back and forth on this rapidly, I would phrase
   9. The http address given by the user will represent the full URL, without needing to add in query parameters or anything else.
   10. A task that fails will retry 3 times before admitting total defeat. We will save an error message as the "result" for this task.
   11. We are going to assume the user is smart enough to use this in a thread they are not running anything else in, as orchestrator will be blocking in that thread. We could redesign it to be non-blocking, but for now we are deciding that is not in the MVP scope. 
-  12. The user will schedule all of their tasks at once
+  12. The user will schedule all of their tasks at once.
+  13. All API calls will be GETs. 
+  14. "Gracefully handling failed crashes" means that we will 
  
