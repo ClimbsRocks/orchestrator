@@ -1,12 +1,16 @@
 # orchestrator
 > Schedule a series of API calls
 
-## API:
+## Installation
+`pip install -r requirements.txt`
+
+## API
 
 ### `orchestrator.schedule`
 Arguments:
-- httpAddress: the http address of the task. `orchestrator` will make a request to this address, and save the results.
-- timeDelayInSeconds: the time delay before this task is run, given in seconds from right now.
+- http_address: the http address of the task. `orchestrator` will make a request to this address, and save the results.
+- time_delay: the time delay before this task is run, given in seconds from when `orchestrator.start()` is invoked.
+- does_repeat: boolean value representing whether this task should repeat or not. If it does repeat, we assume it will repeat on a pattern following the same delay given in time_delay.
 
 Returns: 
 taskID. This is a numeric ID for the task that was just scheduled. This ID can be used to retrieve the status/results of the task.
@@ -16,20 +20,36 @@ Arguments:
 - taskID: the ID of a task that was previously scheduled.
 
 Returns:
-If the task has been run successfully: results that were retrieved for that task.
-If the task has encountered an error 4 times, and thus, has failed: the error message.
-If the task has not run yet: a message stating that this task has not run yet. 
+A list of results showing the full status of each attempt. This starts with a note saying the task was scheduled, and includes the error or results for each time we attempted to run this task. 
 
+### `orchestrator.start`
+Arguments: None
+Returns: None
+This method simply states that we have scheduled our tasks, and are ready to begin running them, after the given delays. This is when the clock starts. 
 
-## Example Usage:
+## Example Usage
 1. Save `orchestrator.py` into the desired directory.
-2. Inside your python code, `import orchestrator`
-3. `or = orchestrator['start']()`
-3. `taskID1 = or.schedule(httpAddress, timeDelayInSeconds)`
-4. `or.getResults(taskID1)` If the task has run and gotten results properly, this will return those results. If the scheduler has not run yet, or has repeatedly failed to get results, you will get an error message.
+2. Inside your python code, 
+```python
+from orchestrator import Orchestrator
+
+or1 = Orchestrator()
+
+# attempt a failure case- this URL has a typo
+taskID1 = or1.schedule('http://presotnparry.com',2)
+taskID2 = or1.schedule('http://github.com/climbsrocks',1)
+
+or1.start()
+print taskID1
+
+task1Results = or1.get_results(taskID1)
+print task1Results
+
+```
+
 
 ### Error Handling
-Orchestrator will continue to run, even if one of the tasks errors out for any reason. The task will be retried 3 times. If there's an error at the end of 4 unsuccessful attempts, that error message or status code will be saved into the results for that taskID. Orchestrator will continue to run all other scheduled tasks as normal. 
+Orchestrator will continue to run, even if one of the tasks errors out for any reason. A failing task will be retried 3 times. Any errors that are encountered, whether the eventual result is a success or not, will be saved into the results for that task. This gives the user an accurate log, which might be useful to figure out where to put in some maintenance work. Orchestrator will continue to run all other scheduled tasks as normal. 
 
 
 #### Assumptions
@@ -49,5 +69,5 @@ If we were in-person and could go back and forth on this rapidly, I would phrase
   11. We are going to assume the user is smart enough to use this in a thread they are not running anything else in, as orchestrator will be blocking in that thread. We could redesign it to be non-blocking, but for now we are deciding that is not in the MVP scope. 
   12. The user will schedule all of their tasks at once.
   13. All API calls will be GETs. 
-  14. "Gracefully handling failed crashes" means that we will 
+  14. The "results" of a successfully completed task is the text of the response, while the "results" for a failed task is information about the error. 
  
