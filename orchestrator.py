@@ -1,5 +1,6 @@
 import sched
 import time
+import requests
 
 
 class Orchestrator:
@@ -10,8 +11,14 @@ class Orchestrator:
         self.nextTaskNum = 0
         
 
-    def makeAPICall(httpAddress, failedAttempts, recurring=False, recurringTime=1000):
+    def makeAPICall(self, httpAddress, failedAttempts, taskID, recurring=False, recurringTime=1000):
         print 'inside makeAPICall'
+        print 'taskID'
+        print taskID
+        print 'httpAddress'
+        print httpAddress
+        r = requests.get(httpAddress)
+        self.results[taskID] = r.text
         # TODO: 
             # reschedule the recurring task
             # make an api call
@@ -25,7 +32,7 @@ class Orchestrator:
     def schedule(self, httpAddress, timeDelay, doesRepeat=False, priority=1):
         self.results[self.nextTaskNum] = 'We have not run this task yet'
 
-        scheduler.enter(timeDelay, priority, makeAPICall, (httpAddress, 0, doesRepeat, timeDelay))
+        self.scheduler.enter(timeDelay, priority, self.makeAPICall, (httpAddress, 0, self.nextTaskNum, doesRepeat, timeDelay))
 
         # TODO: 
             # take in the required arguments
@@ -52,7 +59,8 @@ class Orchestrator:
 or1 = Orchestrator()
 
 
-taskID1 = or1.schedule('http://prestonparry.com',5)
+taskID1 = or1.schedule('http://prestonparry.com',2)
+taskID2 = or1.schedule('http://github.com/climbsrocks',1)
 or1.start()
 print taskID1
 
